@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocApier</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto}
+        html,body{height:100%;background:#fff;color:#111}
+        .layout{display:flex;height:100vh}
+        .sidebar{width:240px;background:#f8f9fa;border-right:1px solid #e5e5e5;padding:24px;display:flex;flex-direction:column}
+        .sidebar .logo{font-size:20px;font-weight:600;margin-bottom:40px;color:#000}
+        .sidebar .menu{flex:1}
+        .sidebar .menu-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:8px;margin-bottom:8px;cursor:pointer;font-weight:500}
+        .sidebar .menu-item.active{background:#000;color:#fff}
+        .main{flex:1;padding:32px;overflow-y:auto}
+        .page-title{font-size:24px;font-weight:600;margin-bottom:24px}
+        .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .search-box{position:relative;width:360px}
+        .search-box input{width:100%;padding:10px 16px 10px 40px;border:1px solid #ddd;border-radius:8px;outline:none}
+        .search-box i{position:absolute;left:14px;top:12px;color:#666}
+        .btn{padding:10px 20px;background:#000;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:500}
+        .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:28px}
+        .stat-card{background:#f8f9fa;border:1px solid #e5e5e5;border-radius:12px;padding:20px}
+        .stat-card .num{font-size:26px;font-weight:700;margin-bottom:4px}
+        .stat-card .label{color:#555;font-size:14px}
+        .table-card{border:1px solid #e5e5e5;border-radius:12px;overflow:hidden}
+        .table-header{display:grid;grid-template-columns:1fr 180px 120px 240px;background:#f8f9fa;padding:14px 20px;font-weight:600}
+        .table-row{display:grid;grid-template-columns:1fr 180px 120px 240px;padding:16px 20px;border-top:1px solid #eee;align-items:center}
+        .badge{display:inline-block;padding:4px 10px;background:#f1f1f1;border-radius:6px;font-size:12px;font-weight:500}
+        .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);justify-content:center;align-items:center}
+        .modal.show{display:flex}
+        .modal-box{background:#fff;width:520px;border-radius:12px;overflow:hidden}
+        .modal-head{padding:18px 24px;border-bottom:1px solid #eee;font-weight:600}
+        .modal-body{padding:24px}
+        .form-item{margin-bottom:18px}
+        .form-item label{display:block;margin-bottom:8px;font-weight:500}
+        .form-item input,.form-item select,.form-item textarea{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;outline:none;font-family:inherit}
+        .modal-foot{padding:16px 24px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:12px}
+        .btn-outline{background:#fff;color:#000;border:1px solid #000}
+        .toast{position:fixed;right:24px;bottom:24px;padding:12px 20px;background:#000;color:#fff;border-radius:8px;opacity:0;transform:translateY(20px);transition:.3s}
+        .toast.show{opacity:1;transform:translateY(0)}
+        .login{position:fixed;inset:0;background:#fff;display:none;align-items:center;justify-content:center}
+        .login-box{width:400px;padding:40px;border:1px solid #e5e5e5;border-radius:16px}
+        .login-title{font-size:20px;font-weight:600;margin-bottom:24px;text-align:center}
+        .login-input{width:100%;padding:12px 16px;border:1px solid #ddd;border-radius:8px;margin-bottom:20px;outline:none;text-align:center}
+        .empty{padding:60px 20px;text-align:center;color:#888}
+        .badge.on{background:#d4edda;color:#155724}
+        .badge.off{background:#f8d7da;color:#721c24}
+        .logs-area{border:1px solid #e5e5e5;border-radius:12px;overflow:hidden;margin-top:20px}
+        .logs-head{background:#f8f9fa;padding:16px 24px;border-bottom:1px solid #e5e5e5;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+        .logs-body{background:#1e1e1e;color:#d4d4d4;padding:16px;font-family:Consolas,monospace;font-size:13px;max-height:400px;overflow-y:auto;white-space:pre-wrap}
+        .log-stderr{color:#f48771}
+        .log-sys{color:#ce9178}
+        .action-group{display:flex;gap:6px}
+        .btn-sm{padding:6px 12px;font-size:12px}
+        .btn-link{background:none;border:none;color:#0066cc;cursor:pointer;text-decoration:underline}
+        .page{display:none}
+        .page.active{display:block}
+        .detail-card{border:1px solid #e5e5e5;border-radius:12px;overflow:hidden;margin-bottom:20px}
+        .detail-head{background:#f8f9fa;padding:16px 24px;border-bottom:1px solid #e5e5e5;display:flex;justify-content:space-between;align-items:center}
+        .detail-title{font-weight:600;font-size:16px}
+        .detail-content{padding:24px}
+        .json-viewer{background:#f8f9fa;border-radius:8px;padding:16px;white-space:pre-wrap;font-family:Consolas,monospace;font-size:13px;max-height:400px;overflow-y:auto}
+        .test-area{border:1px solid #e5e5e5;border-radius:12px;overflow:hidden}
+        .test-head{background:#f8f9fa;padding:16px 24px;border-bottom:1px solid #e5e5e5}
+        .test-body{padding:24px}
+        .test-row{display:grid;grid-template-columns:120px 1fr;gap:16px;margin-bottom:16px;align-items:center}
+        .test-result{margin-top:20px}
+        .result-success{background:#d4edda;color:#155724;padding:12px 16px;border-radius:8px}
+        .result-error{background:#f8d7da;color:#721c24;padding:12px 16px;border-radius:8px}
+    </style>
+</head>
+<body>
+
+<div class="login" id="login">
+    <div class="login-box">
+        <div class="login-title">DocApier 管理面板</div>
+        <input class="login-input" id="pwd" placeholder="请输入管理密码" onkeydown="if(event.key=='Enter')login()">
+        <button class="btn" style="width:100%" onclick="login()">登录</button>
+    </div>
+</div>
+
+<div class="layout" id="app" style="display:none">
+    <div class="sidebar">
+        <div class="logo">DocApier</div>
+        <div class="menu">
+            <div class="menu-item active" onclick="showPage('list')">
+                <i class="bi bi-list-check"></i>
+                <span>API 管理</span>
+            </div>
+            <div class="menu-item" onclick="showPage('detail')">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>API 详情</span>
+            </div>
+            <div class="menu-item" onclick="showPage('test')">
+                <i class="bi bi-lightning-charge"></i>
+                <span>接口测试</span>
+            </div>
+            <div class="menu-item" onclick="showPage('router')">
+                <i class="bi bi-diagram-3"></i>
+                <span>路由配置</span>
+            </div>
+            <div class="menu-item" onclick="console.log('点击服务管理');token=token||localStorage.getItem('token');showPage('plugs')">
+                <i class="bi bi-server"></i>
+                <span>服务管理</span>
+            </div>
+            <div class="menu-item" onclick="showPage('robots')">
+                <i class="bi bi-robot"></i>
+                <span>爬虫配置</span>
+            </div>
+        </div>
+    </div>
+    <div class="main">
+        <div id="page-list" class="page active">
+            <div class="page-title">API 管理</div>
+            <div class="stats">
+                <div class="stat-card"><div class="num" id="c1">0</div><div class="label">API 总数</div></div>
+                <div class="stat-card"><div class="num" id="c2">0</div><div class="label">GET 接口</div></div>
+                <div class="stat-card"><div class="num" id="c3">0</div><div class="label">POST 接口</div></div>
+                <div class="stat-card"><div class="num" id="c4">0</div><div class="label">服务数量</div></div>
+                <div class="stat-card"><div class="num" id="c5">0</div><div class="label">路由规则</div></div>
+            </div>
+            <div class="top-bar">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input id="kw" placeholder="搜索接口路径/描述" oninput="search()">
+                </div>
+                <button class="btn" onclick="openModal()">新增 API</button>
+            </div>
+            <div class="table-card">
+                <div class="table-header">
+                    <div>API 路径</div>
+                    <div>服务地址</div>
+                    <div>请求方式</div>
+                    <div>操作</div>
+                </div>
+                <div id="list"></div>
+            </div>
+        </div>
+
+        <div id="page-detail" class="page">
+            <div class="page-title">API 详情</div>
+            <div class="top-bar">
+                <select id="detail-select" onchange="showDetail()" style="padding:10px 16px;border:1px solid #ddd;border-radius:8px;min-width:300px">
+                    <option value="">请选择 API</option>
+                </select>
+            </div>
+            <div id="detail-content">
+                <div class="empty">请选择一个 API 查看详情</div>
+            </div>
+        </div>
+
+        <div id="page-test" class="page">
+            <div class="page-title">接口测试</div>
+            <div class="test-area">
+                <div class="test-head" style="font-weight:600">在线测试工具</div>
+                <div class="test-body">
+                    <div class="test-row">
+                        <label>请求方式</label>
+                        <select id="test-method">
+                            <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+                        </select>
+                    </div>
+                    <div class="test-row">
+                        <label>API 地址</label>
+                        <input id="test-url" placeholder="例如: /api/user/login">
+                    </div>
+                    <div class="test-row">
+                        <label>请求头</label>
+                        <input id="test-header" placeholder='{"Content-Type":"application/json"}'>
+                    </div>
+                    <div class="test-row">
+                        <label>请求体 (JSON)</label>
+                        <textarea id="test-body" rows="6" placeholder='{"username":"test","password":"123456"}'></textarea>
+                    </div>
+                    <div class="test-row">
+                        <label>测试次数</label>
+                        <input id="test-count" type="number" value="1" min="1" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;width:100px">
+                        <span style="color:#666;margin-left:12px">次（持续测试）</span>
+                        <label style="margin-left:20px">并发数</label>
+                        <input id="test-concurrent" type="number" value="1" min="1" max="10" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;width:80px">
+                    </div>
+                    <div class="test-row">
+                        <label></label>
+                        <button class="btn" onclick="runTest()">单次测试</button>
+                        <button class="btn" style="margin-left:12px;background:#28a745" onclick="runLoopTest()">持续测试</button>
+                        <button class="btn btn-outline" style="margin-left:12px" onclick="runAllTest()">依次测试全部</button>
+                        <span id="test-progress" style="margin-left:16px;color:#666"></span>
+                    </div>
+                    <div class="test-result" id="test-result"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-router" class="page">
+            <div class="page-title" style="display:flex;justify-content:space-between;align-items:center">
+                路由配置
+                <button class="btn" onclick="addRoute()">添加路由</button>
+            </div>
+            <div class="table-card">
+                <div class="table-header">
+                    <div>路由路径</div>
+                    <div>转发目标</div>
+                    <div>API匹配</div>
+                    <div>状态</div>
+                </div>
+                <div id="router-list"></div>
+            </div>
+            <div class="detail-card" style="margin-top:24px">
+                <div class="detail-head"><span class="detail-title">Router 配置文件</span></div>
+                <div class="detail-content">
+                    <div class="json-viewer" id="router-config"></div>
+                </div>
+            </div>
+        </div>
+        <div id="page-plugs" class="page">
+            <div class="page-title" style="display:flex;justify-content:space-between;align-items:center">
+                服务管理
+                <div>
+                    <button class="btn btn-sm btn-green" onclick="startAllPlugs()" style="margin-right:8px">启动全部</button>
+                    <button class="btn btn-sm btn-red" onclick="stopAllPlugs()">停止全部</button>
+                </div>
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div class="num" id="p1">0</div><div class="label">插件总数</div></div>
+                <div class="stat-card"><div class="num" id="p2">0</div><div class="label">运行中</div></div>
+                <div class="stat-card"><div class="num" id="p3">0</div><div class="label">已停止</div></div>
+            </div>
+            <div class="table-card">
+                <div class="table-header" style="grid-template-columns:1fr 100px 120px 220px">
+                    <div>插件名称</div>
+                    <div>状态</div>
+                    <div>PID/端口</div>
+                    <div>操作</div>
+                </div>
+                <div id="plugs-list"></div>
+            </div>
+            <div id="plug-logs-area" style="display:none">
+                <div class="logs-area">
+                    <div class="logs-head">
+                        <span id="plug-log-title">运行日志</span>
+                        <button class="btn btn-sm btn-outline" onclick="closePlugLogs()">关闭</button>
+                    </div>
+                    <div class="logs-body" id="plug-logs-body"></div>
+                </div>
+            </div>
+        </div>
+        <div id="page-robots" class="page">
+            <div class="page-title">爬虫配置</div>
+            <div class="detail-card">
+                <div class="detail-head"><span class="detail-title">robots.txt 自定义配置</span></div>
+                <div class="detail-content">
+                    <p style="margin-bottom:12px;color:#666">自动扫描 public 目录生成基础配置，自定义内容将追加到文件末尾（非覆盖）</p>
+                    <textarea id="robots-content" style="width:100%;height:300px;padding:12px;font-family:monospace;font-size:13px;border:1px solid #ddd;border-radius:8px;resize:none" placeholder="User-agent: *
+Allow: /"></textarea>
+                    <div style="margin-top:12px;display:flex;gap:12px">
+                        <button class="btn btn-primary" onclick="saveRobots()">保存配置</button>
+                        <button class="btn btn-outline" onclick="loadRobots()">重置</button>
+                        <a href="http://localhost:8081/robots.txt" target="_blank" class="btn btn-outline">预览 robots.txt</a>
+                    </div>
+                </div>
+            </div>
+            <div class="detail-card" style="margin-top:24px">
+                <div class="detail-head"><span class="detail-title">配置说明</span></div>
+                <div class="detail-content">
+                    <ul style="color:#666;line-height:2">
+                        <li><strong>http://localhost:8081/robots.txt</strong> 搜索引擎爬虫规则</li>
+                        <li><strong>http://localhost:8081/sitemap.txt</strong> 自动生成站点地图</li>
+                        <li>文件不存在时自动扫描 public 目录下的 html 文件生成</li>
+                        <li>保存自定义内容后将完全使用自定义配置</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-box">
+        <div class="modal-head" id="modal-head">新增 API</div>
+        <div class="modal-body">
+            <div class="form-item"><label>API 路径</label><input id="m_url"></div>
+            <div class="form-item"><label>服务地址</label><input id="m_home"></div>
+            <div class="form-item"><label>接口描述</label><input id="m_desc"></div>
+            <div class="form-item"><label>请求参数结构</label><textarea id="m_params" rows="3" placeholder='{"username":{"type":"string"}}'></textarea></div>
+            <div class="form-item"><label>响应结构</label><textarea id="m_response" rows="3" placeholder='{"code":200,"data":{}}'></textarea></div>
+            <div class="form-item"><label>请求方式</label>
+                <select id="m_method">
+                    <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn btn-outline" onclick="closeModal()">取消</button>
+            <button class="btn" onclick="save()">保存</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let token = localStorage.getItem('token')||''
+let apiList = []
+let routerConfig = { routes: [] }
+
+function t(msg){let a=document.getElementById('toast');a.textContent=msg;a.classList.add('show');setTimeout(()=>a.classList.remove('show'),2500)}
+let plugList = [];
+let currentPlugLogs = '';
+
+function showPage(name){
+    document.querySelectorAll('.menu-item').forEach((m,i)=>m.classList.toggle('active',i==['list','detail','test','router','plugs','robots'].indexOf(name)))
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
+    document.getElementById('page-'+name).classList.add('active')
+    if(name==='detail') loadSelect()
+    if(name==='router') renderRouter()
+    if(name==='plugs') loadPlugs()
+    if(name==='robots') loadRobots()
+}
+
+function isRouted(apiUrl) {
+    return routerConfig.routes.some(r => apiUrl === r.path);
+}
+
+function gotoLogin(){
+    token='';localStorage.removeItem('token');
+    document.getElementById('login').style.display='flex';
+    document.getElementById('app').style.display='none';
+}
+async function login(){let p=document.getElementById('pwd').value;let r=await fetch('/List?pwd='+p);let j=await r.json();if(j.code==200){token=p;localStorage.setItem('token',p);document.getElementById('login').style.display='none';document.getElementById('app').style.display='flex';load()}else{t('密码错误')}}
+async function load(){let r=await fetch('/List?pwd='+token);let j=await r.json();if(j.code==401){gotoLogin();return;}if(j.code==200){apiList=j.data;routerConfig=j.routerConfig||{routes:[]};render(j.data)}}
+async function search(){let k=document.getElementById('kw').value;if(!k){load();return}let r=await fetch('/S?s='+encodeURIComponent(k)+'&pwd='+token);let j=await r.json();render(j.data||[])}
+function render(list){
+    let d=document.getElementById('list');
+    if(list.length===0){d.innerHTML='<div class="empty">暂无 API 数据</div>';return}
+    d.innerHTML=list.map(i=>{
+        const routed = isRouted(i.url);
+        return `
+    <div class="table-row">
+        <div>
+            ${i.url}
+            ${routed?'<span class="badge" style="background:#d4edda;color:#155724;margin-left:8px">已路由</span>':'<span class="badge" style="background:#f8d7da;color:#721c24;margin-left:8px">未路由</span>'}
+        </div>
+        <div>${i.home||'-'}</div>
+        <div><span class="badge">${i.json?.['请求方式']||'GET'}</span></div>
+        <div>
+            <button class="btn-sm btn-link" onclick="viewDetail('${i.url}')">详情</button>
+            <button class="btn-sm btn-link" onclick="editApi('${i.url}')" style="margin-left:4px">编辑</button>
+            <button class="btn-sm btn-link" onclick="testApi('${i.url}','${i.json?.['请求方式']||'GET'}')" style="margin-left:4px">测试</button>
+            ${routed?
+                `<button class="btn btn-sm btn-red" onclick="removeFromRouter('${i.url}')" style="margin-left:8px">移除</button>`:
+                `<button class="btn btn-sm btn-green" onclick="addToRouter('${i.url}','${i.home}')" style="margin-left:8px">注册</button>`
+            }
+            <button class="btn btn-sm btn-outline" onclick="del('${i.url}')" style="margin-left:8px">删除</button>
+        </div>
+    </div>`}).join('')
+    document.getElementById('c1').textContent=list.length
+    document.getElementById('c2').textContent=list.filter(x=>(x.json?.['请求方式']||'GET')=='GET').length
+    document.getElementById('c3').textContent=list.filter(x=>(x.json?.['请求方式']||'GET')=='POST').length
+    document.getElementById('c4').textContent=new Set(list.map(x=>x.home).filter(Boolean)).size
+    document.getElementById('c5').textContent=routerConfig.routes.length
+}
+
+async function addRoute(){
+    let p=prompt('请输入路由路径,例如: /api');
+    if(!p)return;
+    let t=prompt('请输入目标地址,例如: 127.0.0.1:3000');
+    if(!t)return;
+    let r=await fetch('/AddRoute?pwd='+token,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:p,target:t})});
+    let j=await r.json();
+    t(j.message);
+    load();
+}
+async function addToRouter(url, home){
+    let target=home||prompt('请输入目标服务地址:','127.0.0.1:3000');
+    if(!target)return;
+    let r=await fetch('/AddRoute?pwd='+token,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:url,target})});
+    let j=await r.json();
+    t(j.message);
+    load();
+}
+async function removeFromRouter(url){
+    if(!confirm('确认从路由中移除?'))return;
+    let r=await fetch('/RemoveRoute?pwd='+token,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:url})});
+    let j=await r.json();
+    t(j.message);
+    load();
+}
+async function delRoute(p){
+    if(!confirm('确认删除此路由?'))return;
+    let r=await fetch('/RemoveRoute?pwd='+token,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:p})});
+    let j=await r.json();
+    t(j.message);
+    load();
+}
+function renderRouter(){
+    let d=document.getElementById('router-list');
+    if(routerConfig.routes.length===0){
+        d.innerHTML='<div class="empty">暂无路由配置</div>';
+        return;
+    }
+    d.innerHTML=routerConfig.routes.map(r=>{
+        const count = apiList.filter(a=>a.url === r.path).length;
+        return `
+        <div class="table-row">
+            <div><strong>${r.path}</strong></div>
+            <div>${r.target}</div>
+            <div><span class="badge">${count} 个 API</span></div>
+            <div>
+                <button class="btn btn-sm btn-red" onclick="delRoute('${r.path}')">移除</button>
+            </div>
+        </div>`}).join('');
+    document.getElementById('router-config').textContent=JSON.stringify(routerConfig, null, 2);
+}
+
+async function loadSelect(){
+    let r=await fetch('/List?pwd='+token);let j=await r.json();
+    let s=document.getElementById('detail-select');
+    s.innerHTML='<option value="">请选择 API</option>' + j.data.map(i=>`<option value="${i.url}">${i.url}</option>`).join('')
+    apiList = j.data
+}
+function showDetail(){
+    let url=document.getElementById('detail-select').value;
+    if(!url){document.getElementById('detail-content').innerHTML='<div class="empty">请选择一个 API 查看详情</div>';return}
+    let api=apiList.find(x=>x.url===url);
+    if(!api)return
+    document.getElementById('detail-content').innerHTML=`
+        <div class="detail-card">
+            <div class="detail-head">
+                <span class="detail-title">${api.url}</span>
+                <div style="display:flex;gap:12px;align-items:center">
+                    <span class="badge">${api.json?.['请求方式']||'GET'}</span>
+                    <button class="btn btn-sm btn-outline" onclick="editApi('${api.url}')">编辑</button>
+                    <button class="btn btn-sm" onclick="testApi('${api.url}','${api.json?.['请求方式']||'GET'}')">测试此接口</button>
+                </div>
+            </div>
+            <div class="detail-content">
+                <p style="margin-bottom:16px"><strong>服务地址：</strong>${api.home||'未指定'}</p>
+                <p style="margin-bottom:16px"><strong>接口描述：</strong>${api.json?.['接口描述']||'暂无描述'}</p>
+                <p><strong>完整元数据：</strong></p>
+                <div class="json-viewer">${JSON.stringify(api, null, 2)}</div>
+            </div>
+        </div>
+    `
+}
+function viewDetail(url){
+    showPage('detail');
+    document.getElementById('detail-select').value=url;
+    showDetail();
+}
+function testApi(url, method){
+    showPage('test');
+    document.getElementById('test-url').value = 'http://localhost:' + (window.ROUTER_PORT||'8081') + url;
+    document.getElementById('test-method').value = method;
+}
+
+async function doTest(method, url, header, body){
+    let headers=JSON.parse(header||'{}');
+    headers['Content-Type']=headers['Content-Type']||'application/json';
+    let opt={method,headers};
+    if(method!=='GET' && body)opt.body=body;
+    let start=Date.now(), ok=false, status=0, time=0;
+    try{
+        let r=await fetch(url, opt);
+        status=r.status;
+        ok=r.ok;
+        time=Date.now()-start;
+        await r.text();
+    }catch(e){}
+    return {ok, status, time};
+}
+async function runTest(){
+    let method=document.getElementById('test-method').value;
+    let url=document.getElementById('test-url').value;
+    let header=document.getElementById('test-header').value||'{}';
+    let body=document.getElementById('test-body').value;
+    
+    if(!url){t('请输入API地址');return}
+    
+    try{
+        let headers=JSON.parse(header);
+        headers['Content-Type']=headers['Content-Type']||'application/json';
+        
+        let opt={method,headers};
+        if(method!=='GET' && body)opt.body=body;
+        
+        let start=Date.now();
+        let r=await fetch(url, opt);
+        let time=Date.now()-start;
+        let text=await r.text();
+        
+        try{text=JSON.stringify(JSON.parse(text), null, 2)}catch(e){}
+        
+        document.getElementById('test-result').innerHTML=`
+            <div class="result-success" style="margin-bottom:12px">
+                <strong>请求成功！</strong> 状态码: ${r.status} | 耗时: ${time}ms
+            </div>
+            <p style="margin-bottom:8px"><strong>响应内容：</strong></p>
+            <div class="json-viewer">${text}</div>
+        `
+    }catch(e){
+        document.getElementById('test-result').innerHTML=`<div class="result-error"><strong>请求失败：</strong>${e.message}</div>`
+    }
+}
+async function runLoopTest(){
+    let method=document.getElementById('test-method').value;
+    let url=document.getElementById('test-url').value;
+    let header=document.getElementById('test-header').value||'{}';
+    let body=document.getElementById('test-body').value;
+    let count=parseInt(document.getElementById('test-count').value)||10;
+    let concurrent=parseInt(document.getElementById('test-concurrent').value)||1;
+    
+    if(!url){t('请输入API地址');return}
+    
+    let success=0, fail=0, totalTime=0, minTime=99999, maxTime=0;
+    let progress=document.getElementById('test-progress');
+    
+    for(let i=0;i<count;i++){
+        progress.textContent=`测试中... ${i+1}/${count}`;
+        let tasks=[];
+        for(let c=0;c<concurrent;c++){
+            tasks.push(doTest(method, url, header, body));
+        }
+        let results=await Promise.all(tasks);
+        for(let r of results){
+            if(r.ok)success++;else fail++;
+            totalTime+=r.time;
+            minTime=Math.min(minTime, r.time);
+            maxTime=Math.max(maxTime, r.time);
+        }
+    }
+    
+    let avgTime=Math.round(totalTime/(count*concurrent));
+    progress.textContent='';
+    document.getElementById('test-result').innerHTML=`
+        <div class="result-success" style="margin-bottom:12px">
+            <strong>测试完成！</strong> 共 ${count*concurrent} 次请求
+        </div>
+        <div class="json-viewer">成功: ${success} 次 | 失败: ${fail} 次
+成功率: ${Math.round(success/(count*concurrent)*100)}%
+
+响应时间:
+  平均: ${avgTime}ms
+  最快: ${minTime}ms
+  最慢: ${maxTime}ms
+
+测试配置:
+  次数: ${count} 轮
+  并发: ${concurrent} 线程</div>
+    `
+}
+async function runAllTest(){
+    let header=document.getElementById('test-header').value||'{}';
+    let body=document.getElementById('test-body').value;
+    let apis=apiList.filter(a=>a.url).slice(0,20);
+    let success=0, fail=0, totalTime=0;
+    let progress=document.getElementById('test-progress');
+    let details=[];
+    
+    for(let i=0;i<apis.length;i++){
+        let api=apis[i];
+        progress.textContent=`测试中... ${i+1}/${apis.length}`;
+        let fullUrl='http://localhost:'+(window.ROUTER_PORT||'8081')+api.url;
+        let method=api.json?.['请求方式']||'GET';
+        let r=await doTest(method, fullUrl, header, body);
+        if(r.ok)success++;else fail++;
+        totalTime+=r.time;
+        details.push(`${r.ok?'✅':'❌'} ${api.url} - ${r.status} - ${r.time}ms`);
+    }
+    
+    let avgTime=Math.round(totalTime/apis.length);
+    progress.textContent='';
+    document.getElementById('test-result').innerHTML=`
+        <div class="result-success" style="margin-bottom:12px">
+            <strong>批量测试完成！</strong> 共 ${apis.length} 个接口
+        </div>
+        <div class="json-viewer">成功: ${success} 个 | 失败: ${fail} 个
+通过率: ${Math.round(success/apis.length*100)}%
+平均响应: ${avgTime}ms
+
+━━━━━━━━━━ 详细 ━━━━━━━━━━
+${details.join('\n')}</div>
+    `
+}
+
+async function loadPlugs(){
+    let r=await fetch('/Plugs?pwd='+token)
+    let j=await r.json()
+    if(j.code==401){gotoLogin();return}
+    plugList=j.data
+    renderPlugs()
+}
+function renderPlugs(){
+    let d=document.getElementById('plugs-list')
+    console.log('渲染服务列表', plugList)
+    if(plugList.length===0){d.innerHTML='<div class="empty">未发现插件，请在 Plugs 目录中添加插件</div>';return}
+    d.innerHTML=plugList.map(p=>`
+    <div class="table-row" style="grid-template-columns:1fr 100px 120px 220px">
+        <div>
+            <strong>${p.info?.name||p.name}</strong>
+            <div style="font-size:12px;color:#666;margin-top:4px">${p.info?.description||''}</div>
+        </div>
+        <div><span class="badge ${p.running?'on':'off'}">${p.running?'运行中':'已停止'}</span></div>
+        <div>${p.pid||'端口:'+(p.info?.port||'-')}</div>
+        <div class="action-group">
+            ${p.running?`
+                <button class="btn btn-sm btn-red" onclick="stopPlug('${p.name}')">停止</button>
+                <button class="btn btn-sm btn-outline" onclick="restartPlug('${p.name}')">重启</button>
+            `:`
+                <button class="btn btn-sm btn-green" onclick="startPlug('${p.name}')">启动</button>
+            `}
+            <button class="btn btn-sm btn-outline" onclick="showPlugLogs('${p.name}')">日志</button>
+        </div>
+    </div>`).join('')
+    document.getElementById('p1').textContent=plugList.length
+    document.getElementById('p2').textContent=plugList.filter(x=>x.running).length
+    document.getElementById('p3').textContent=plugList.filter(x=>!x.running).length
+}
+async function startPlug(name){
+    let r=await fetch('/PlugStart?pwd='+token,{method:'POST',body:JSON.stringify({name})})
+    let j=await r.json()
+    t(j.message)
+    loadPlugs()
+}
+async function stopPlug(name){
+    let r=await fetch('/PlugStop?pwd='+token,{method:'POST',body:JSON.stringify({name})})
+    let j=await r.json()
+    t(j.message)
+    loadPlugs()
+}
+async function restartPlug(name){
+    let r=await fetch('/PlugRestart?pwd='+token,{method:'POST',body:JSON.stringify({name})})
+    let j=await r.json()
+    t(j.message)
+    loadPlugs()
+}
+async function showPlugLogs(name){
+    currentPlugLogs=name
+    let r=await fetch('/PlugLogs?pwd='+token,{method:'POST',body:JSON.stringify({name})})
+    let j=await r.json()
+    document.getElementById('plug-log-title').textContent=name+' - 运行日志'
+    document.getElementById('plug-logs-body').innerHTML=j.data.map(l=>
+        `<div class="log-${l.type}">[${new Date(l.time).toLocaleTimeString()}] ${l.msg}</div>`
+    ).join('')
+    document.getElementById('plug-logs-area').style.display='block'
+    document.getElementById('plug-logs-body').scrollTop=999999
+}
+function closePlugLogs(){
+    document.getElementById('plug-logs-area').style.display='none'
+}
+async function startAllPlugs(){
+    for(let p of plugList){
+        if(!p.running) await startPlug(p.name)
+    }
+}
+async function stopAllPlugs(){
+    for(let p of plugList){
+        if(p.running) await stopPlug(p.name)
+    }
+}
+async function loadRobots(){
+    let r=await fetch('/RobotsGet?pwd='+token)
+    let j=await r.json()
+    if(j.code==401){gotoLogin();return}
+    document.getElementById('robots-content').value=j.data
+}
+async function saveRobots(){
+    let r=await fetch('/RobotsSave?pwd='+token,{
+        method:'POST',
+        body:JSON.stringify({content:document.getElementById('robots-content').value})
+    })
+    let j=await r.json()
+    toast(j.message||'保存成功')
+}
+setInterval(()=>{
+    if(token && document.getElementById('page-plugs').classList.contains('active')) loadPlugs()
+},5000)
+
+if(token){
+    document.getElementById('login').style.display='none';
+    document.getElementById('app').style.display='flex';
+    load();
+    loadPlugs();
+}else{
+    document.getElementById('login').style.display='flex';
+}
+
+function openModal(){
+    document.getElementById('modal-head').textContent='新增 API'
+    document.getElementById('m_url').value=''
+    document.getElementById('m_home').value=''
+    document.getElementById('m_desc').value=''
+    document.getElementById('m_method').value='GET'
+    document.getElementById('m_params').value=''
+    document.getElementById('m_response').value=''
+    document.getElementById('modal').classList.add('show')
+}
+function editApi(url){
+    let api=apiList.find(x=>x.url===url)
+    if(!api)return
+    document.getElementById('modal-head').textContent='编辑 API'
+    document.getElementById('m_url').value=api.url
+    document.getElementById('m_home').value=api.home||''
+    document.getElementById('m_desc').value=api.json?.['接口描述']||''
+    document.getElementById('m_method').value=api.json?.['请求方式']||'GET'
+    document.getElementById('m_params').value=JSON.stringify(api.json?.['请求参数结构']||{},null,2)
+    document.getElementById('m_response').value=JSON.stringify(api.json?.['响应结构']||{},null,2)
+    document.getElementById('modal').classList.add('show')
+}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+async function save(){
+    let u=document.getElementById('m_url').value
+    let h=document.getElementById('m_home').value
+    let d=document.getElementById('m_desc').value
+    let m=document.getElementById('m_method').value
+    let p=document.getElementById('m_params').value
+    let rs=document.getElementById('m_response').value
+    
+    let json={'接口描述':d,'请求方式':m}
+    if(p)try{json['请求参数结构']=JSON.parse(p)}catch(e){}
+    if(rs)try{json['响应结构']=JSON.parse(rs)}catch(e){}
+    
+    let r=await fetch('/U',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u,home:h,json,pwd:token})})
+    let j=await r.json()
+    if(j.code==200){closeModal();load();t('保存成功')}else{t('保存失败')}
+}
+async function del(url){if(!confirm('确认删除？'))return;let r=await fetch('/D',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,pwd:token})});let j=await r.json();if(j.code==200){load();t('删除成功')}}
+if(token)login()
+</script>
+</body>
+</html>

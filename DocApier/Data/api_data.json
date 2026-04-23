@@ -1,0 +1,48 @@
+{
+  "/Example": {
+    "url": "/Example",
+    "home": "127.0.0.1:3001",
+    "json": {
+      "接口描述": "示例服务1测试接口",
+      "请求方式": "GET",
+      "请求参数结构": {},
+      "响应结构": {
+        "name": {
+          "type": "string",
+          "description": "服务名称"
+        },
+        "time": {
+          "type": "string",
+          "description": "响应时间"
+        }
+      }
+    }
+  },
+  "/Example2": {
+    "url": "/Example2",
+    "home": "127.0.0.1:3002",
+    "json": {
+      "接口描述": "示例服务2测试接口",
+      "请求方式": "GET",
+      "请求参数结构": {},
+      "响应结构": {
+        "name": {
+          "type": "string",
+          "description": "服务名称"
+        },
+        "message": {
+          "type": "string",
+          "description": "欢迎消息"
+        }
+      }
+    }
+  },
+  "/": {
+    "url": "/",
+    "home": "127.0.0.1:3000",
+    "json": {
+      "接口描述": "静态文件",
+      "请求方式": "GET"
+    }
+  }
+}

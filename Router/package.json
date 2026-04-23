@@ -1,0 +1,12 @@
+{
+  "name": "apibay-router",
+  "version": "1.0.0",
+  "description": "API Reverse Proxy Router",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": ["router", "proxy", "gateway"],
+  "author": "APIBay Team",
+  "license": "MIT"
+}

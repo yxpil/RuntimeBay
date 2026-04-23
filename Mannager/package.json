@@ -1,0 +1,12 @@
+{
+  "name": "apibay-mannager",
+  "version": "1.0.0",
+  "description": "Process Manager Service",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": ["process", "manager", "daemon"],
+  "author": "APIBay Team",
+  "license": "MIT"
+}

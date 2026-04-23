@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mannager - 进程管理器</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto}
+        html,body{height:100%;background:#fff;color:#111}
+        .layout{display:flex;height:100vh}
+        .sidebar{width:240px;background:#f8f9fa;border-right:1px solid #e5e5e5;padding:24px}
+        .sidebar .logo{font-size:20px;font-weight:600;margin-bottom:40px;color:#000}
+        .sidebar .menu-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:8px;margin-bottom:8px;cursor:pointer;font-weight:500}
+        .sidebar .menu-item.active{background:#000;color:#fff}
+        .main{flex:1;padding:32px;overflow-y:auto}
+        .page-title{font-size:24px;font-weight:600;margin-bottom:24px}
+        .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+        .stat-card{background:#f8f9fa;border:1px solid #e5e5e5;border-radius:12px;padding:20px}
+        .stat-card .num{font-size:26px;font-weight:700;margin-bottom:4px}
+        .stat-card .label{color:#555;font-size:14px}
+        .table-card{border:1px solid #e5e5e5;border-radius:12px;overflow:hidden}
+        .table-header{display:grid;grid-template-columns:1fr 100px 120px 180px;background:#f8f9fa;padding:14px 20px;font-weight:600}
+        .table-row{display:grid;grid-template-columns:1fr 100px 120px 180px;padding:16px 20px;border-top:1px solid #eee;align-items:center}
+        .badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500}
+        .badge.on{background:#d4edda;color:#155724}
+        .badge.off{background:#f8d7da;color:#721c24}
+        .btn{padding:8px 16px;background:#000;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:500}
+        .btn-sm{padding:6px 12px;font-size:12px}
+        .btn-outline{background:#fff;color:#000;border:1px solid #000}
+        .btn-green{background:#28a745}
+        .btn-red{background:#dc3545}
+        .toast{position:fixed;right:24px;bottom:24px;padding:12px 20px;background:#000;color:#fff;border-radius:8px;opacity:0;transform:translateY(20px);transition:.3s}
+        .toast.show{opacity:1;transform:translateY(0)}
+        .logs-area{border:1px solid #e5e5e5;border-radius:12px;overflow:hidden;margin-top:20px}
+        .logs-head{background:#f8f9fa;padding:16px 24px;border-bottom:1px solid #e5e5e5;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+        .logs-body{background:#1e1e1e;color:#d4d4d4;padding:16px;font-family:Consolas,monospace;font-size:13px;max-height:400px;overflow-y:auto;white-space:pre-wrap}
+        .log-stderr{color:#f48771}
+        .log-sys{color:#ce9178}
+        .action-group{display:flex;gap:8px}
+        .empty{padding:60px 20px;text-align:center;color:#888}
+        .login{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center}
+        .login-box{width:400px;padding:40px;border:1px solid #e5e5e5;border-radius:16px}
+        .login-title{font-size:20px;font-weight:600;margin-bottom:24px;text-align:center}
+        .login-input{width:100%;padding:12px 16px;border:1px solid #ddd;border-radius:8px;margin-bottom:20px;outline:none;text-align:center}
+    </style>
+</head>
+<body>
+<div class="login" id="login">
+    <div class="login-box">
+        <div class="login-title">Mannager 进程管理器</div>
+        <input class="login-input" id="pwd" placeholder="请输入管理密码" onkeydown="if(event.key=='Enter')login()">
+        <button class="btn" style="width:100%" onclick="login()">登录</button>
+    </div>
+</div>
+<div class="layout" id="app" style="display:none">
+    <div class="sidebar">
+        <div class="logo">Mannager</div>
+        <div class="menu-item active">
+            <i class="bi bi-play-circle"></i>
+            <span>进程管理</span>
+        </div>
+    </div>
+    <div class="main">
+        <div class="page-title">子进程管理器</div>
+        <div class="stats">
+            <div class="stat-card"><div class="num" id="c1">0</div><div class="label">插件总数</div></div>
+            <div class="stat-card"><div class="num" id="c2">0</div><div class="label">运行中</div></div>
+            <div class="stat-card"><div class="num" id="c3">0</div><div class="label">已停止</div></div>
+        </div>
+        <div class="table-card">
+            <div class="table-header">
+                <div>插件名称</div>
+                <div>状态</div>
+                <div>PID</div>
+                <div>操作</div>
+            </div>
+            <div id="list"></div>
+        </div>
+        <div id="logs-area" style="display:none">
+            <div class="logs-area">
+                <div class="logs-head">
+                    <span id="log-title">运行日志</span>
+                    <button class="btn btn-sm btn-outline" onclick="closeLogs()">关闭</button>
+                </div>
+                <div class="logs-body" id="logs-body"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let token = localStorage.getItem('mannager_token')||''
+let list = []
+
+function t(msg){let a=document.getElementById('toast');a.textContent=msg;a.classList.add('show');setTimeout(()=>a.classList.remove('show'),2500)}
+async function login(){let p=document.getElementById('pwd').value;let r=await fetch('/list?pwd='+p);let j=await r.json();if(j.code==200){token=p;localStorage.setItem('mannager_token',p);document.getElementById('login').style.display='none';document.getElementById('app').style.display='flex';load()}else{t('密码错误')}}
+async function load(){
+    let r=await fetch('/list?pwd='+token)
+    let j=await r.json()
+    list=j.data
+    render()
+}
+function render(){
+    let d=document.getElementById('list')
+    if(list.length===0){d.innerHTML='<div class="empty">未发现插件，请在 Plugs 目录中添加插件</div>';return}
+    d.innerHTML=list.map(p=>`
+    <div class="table-row">
+        <div>
+            <strong>${p.info?.name||p.name}</strong>
+            <div style="font-size:12px;color:#666;margin-top:4px">${p.info?.description||''}</div>
+        </div>
+        <div><span class="badge ${p.running?'on':'off'}">${p.running?'运行中':'已停止'}</span></div>
+        <div>${p.pid||'端口:'+(p.info?.port||'-')}</div>
+        <div class="action-group">
+            ${p.running?`
+                <button class="btn btn-sm btn-red" onclick="stop('${p.name}')">停止</button>
+                <button class="btn btn-sm btn-outline" onclick="restart('${p.name}')">重启</button>
+            `:`
+                <button class="btn btn-sm btn-green" onclick="start('${p.name}')">启动</button>
+            `}
+            <button class="btn btn-sm btn-outline" onclick="showLogs('${p.name}')">日志</button>
+        </div>
+    </div>`).join('')
+    document.getElementById('c1').textContent=list.length
+    document.getElementById('c2').textContent=list.filter(x=>x.running).length
+    document.getElementById('c3').textContent=list.filter(x=>!x.running).length
+}
+async function start(name){
+    let r=await fetch('/start?pwd='+token,{method:'POST',body:JSON.stringify({name})})
+    let j=await r.json()
+    t(j.message)
+    load()
+}
+async function stop(name){
+    let r=await fetch('/stop?pwd='+token,{method:'POST',body:JSON.stringify({name})})
+    let j=await r.json()
+    t(j.message)
+    load()
+}
+async function restart(name){
+    let r=await fetch('/restart?pwd='+token,{method:'POST',body:JSON.stringify({name})})
+    let j=await r.json()
+    t(j.message)
+    load()
+}
+async function showLogs(name){
+    let r=await fetch('/logs?pwd='+token,{method:'POST',body:JSON.stringify({name})})
+    let j=await r.json()
+    document.getElementById('log-title').textContent=name+' - 运行日志'
+    document.getElementById('logs-body').innerHTML=j.data.map(l=>
+        `<div class="log-${l.type}">[${new Date(l.time).toLocaleTimeString()}] ${l.msg}</div>`
+    ).join('')
+    document.getElementById('logs-area').style.display='block'
+    document.getElementById('logs-body').scrollTop=999999
+}
+function closeLogs(){
+    document.getElementById('logs-area').style.display='none'
+}
+setInterval(()=>{if(token)load()},5000)
+if(token)login()
+</script>
+</body>
+</html>

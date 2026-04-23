@@ -1,0 +1,9 @@
+Base
+  port:8081
+Error
+  ErrorPages/
+  404:404.html
+  500:500.html
+
+
+From 127.0.0.1:3000 TO /
