@@ -1,0 +1,11 @@
+{
+  "name": "server1",
+  "version": "1.0.0",
+  "description": "Example Plugin Service 1",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "APIBay Team",
+  "license": "MIT"
+}

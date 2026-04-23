@@ -1,0 +1,6 @@
+name: 示例服务1
+version: 1.0.0
+author: APIBay Team
+description: 这是第一个示例插件服务，提供基础API演示
+port: 3001
+autostart: true
