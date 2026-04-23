@@ -1,0 +1,14 @@
+{
+  "name": "apibay",
+  "version": "1.0.0",
+  "description": "API Gateway & Manager Platform",
+  "main": "index.js",
+  "scripts": {
+    "start": "bun index.js --bun",
+    "dev": "set NODE_ENV=development&& bun index.js --bun",
+    "prod": "set NODE_ENV=production&& bun index.js --bun"
+  },
+  "keywords": ["api", "gateway", "manager"],
+  "author": "APIBay Team",
+  "license": "MIT"
+}
