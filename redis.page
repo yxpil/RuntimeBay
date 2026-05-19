@@ -1,0 +1,14 @@
+spring:
+  redis:
+    # 单机节点
+    host: 127.0.0.1
+    port: 6379
+    password:
+    database: 0
+    # 连接池配置（适配高并发插件/网关）
+    lettuce:
+      pool:
+        max-active: 200
+        max-idle: 50
+        min-idle: 10
+        max-wait: 100ms

@@ -1,0 +1,5 @@
+name: 站点地图服务
+version: 1.0.0
+description: 站点地图管理服务
+port: 729
+autostart: true

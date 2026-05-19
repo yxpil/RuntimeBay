@@ -1,0 +1,33 @@
+# Rust build artifacts
+Router/target/
+Router/Cargo.lock
+Mannager/target/
+Mannager/Cargo.lock
+
+# Node.js dependencies
+node_modules/
+
+# Log files
+Plugs/Base_Logs/logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files
+.env
+mysql.page
+redis.page

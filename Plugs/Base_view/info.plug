@@ -1,0 +1,5 @@
+name: 静态文件服务器
+version: 1.0.0
+description: 统一静态文件管理服务
+port: 728
+autostart: true

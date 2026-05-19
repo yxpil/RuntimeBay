@@ -1,0 +1,10 @@
+[package]
+name = "router"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+hyper = { version = "0.14", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
+notify = "6.0"
+regex = "1.10"

@@ -1,0 +1,11 @@
+Base
+  port:8081
+Error
+  ErrorPages/
+  404:404.html
+  500:500.html
+
+From 127.0.0.1:728 TO /
+From 127.0.0.1:729 TO /robots.txt
+
+From 127.0.0.1:729/sitemap.xml TO /sitemap.xml

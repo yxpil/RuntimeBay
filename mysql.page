@@ -1,0 +1,12 @@
+spring:
+  # 主库（写）
+  datasource:
+    primary:
+      url: jdbc:mysql://127.0.0.1:3306/runtimebay?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+      username: root
+      password: qipa1234
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+

@@ -1,0 +1,4 @@
+name: 日志服务器
+version: 1.0.0
+description: 统一日志管理服务
+autostart: true
